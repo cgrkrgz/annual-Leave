@@ -1,6 +1,5 @@
 package com.annualLeave.config;
 
-
 import com.annualLeave.repository.AnnualLeaveAuthRepository;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -15,10 +14,9 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.security.core.context.SecurityContextHolder;
-
+import org.springframework.security.core.AuthenticationException;
 
 import java.io.IOException;
-
 
 @Component
 @RequiredArgsConstructor
@@ -26,7 +24,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final AnnualLeaveAuthRepository authRepository;
-    private final UserDetailsService userDetailsService;  // Service kullanacağız
+    private final UserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -34,8 +32,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+        // Login ve create endpoint'lerini atla
+        String requestPath = request.getRequestURI();
+        if (requestPath.equals("/api/auth/login") || requestPath.equals("/api/auth/create")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authHeader = request.getHeader("Authorization");
 
+        // Token yoksa devam et (Spring Security kendi exception'ını fırlatır)
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -61,8 +67,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
-        } catch (JwtException e) {
+            // Token geçersizse authentication'ı set etmiyoruz
+            // Spring Security otomatik olarak AuthenticationEntryPoint'i çağırır
+        } catch (Exception e) {
+            // Log için
             System.out.println("JWT doğrulama hatası: " + e.getMessage());
+            // Authentication'ı set etmiyoruz, Spring Security kendi exception'ını handle eder
         }
 
         filterChain.doFilter(request, response);

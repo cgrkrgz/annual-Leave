@@ -1,22 +1,24 @@
-// src/main/java/com/annualLeave/model/RootEntity.java
 package com.annualLeave.model;
 
 import java.time.LocalDateTime;
-
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class RootEntity<T> {
-	private boolean success;
-	private String message;
-	private T data;
-	
-	// Hata detayı için metadata
+    private boolean success;
+    private String message;
+    private T data;
+    
+    // Hata detayı için metadata
     private String hostName;
     private String path;
+    
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime timestamp;
+    
     private int statusCode;
 
     public static <T> RootEntity<T> ok(T data) {
@@ -28,8 +30,6 @@ public class RootEntity<T> {
         return root;
     }
 
-    
-    // burası hic bir yerde donmuyor eger boyle donulmek ıstenırse cagırılır.
     public static <T> RootEntity<T> error(String message) {
         RootEntity<T> root = new RootEntity<>();
         root.setSuccess(false);
@@ -49,5 +49,4 @@ public class RootEntity<T> {
         root.setStatusCode(statusCode);
         return root;
     }
-
 }
